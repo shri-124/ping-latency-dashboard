@@ -1,0 +1,16 @@
+route:
+  receiver: local-webhook
+  group_by: ["alertname", "name", "target"]
+  group_wait: 10s
+  group_interval: 1m
+  repeat_interval: 2h
+
+
+receivers:
+  - name: local-webhook
+    webhook_configs:
+      - url: http://pinger:8000/alert
+        send_resolved: true
+
+
+# To enable email/slack later, add another receiver and update route

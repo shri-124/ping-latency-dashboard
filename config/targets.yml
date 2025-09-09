@@ -1,0 +1,14 @@
+interval_seconds: 15
+request_timeout_seconds: 5
+
+
+targets:
+  - name: google
+    url: https://www.google.com
+    threshold_seconds: 0.35
+  - name: cloudflare-dns-tcp
+    url: tcp://1.1.1.1:53
+    threshold_seconds: 0.05
+  - name: github
+    url: https://github.com
+    threshold_seconds: 0.40

@@ -1,0 +1,23 @@
+groups:
+  - name: latency-alerts
+    rules:
+      - alert: HighLatency
+        expr: ping_latency_seconds > ping_latency_threshold_seconds
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.name }} latency high"
+          description: |-
+            Target {{ $labels.target }} ({{ $labels.scheme }}) latency = {{ $value | printf "%.3f" }}s
+            Threshold = {{ with query "ping_latency_threshold_seconds{target=\"" $labels.target "\"}" }}{{ . | first | value | printf "%.3f" }}s{{ end }}
+
+
+      - alert: TargetDown
+        expr: ping_up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.name }} is down"
+          description: "No successful probe for {{ $labels.target }} ({{ $labels.scheme }})"
