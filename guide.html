@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ping & Latency Dashboard — Step‑by‑Step Guide</title>
+  <meta name="description" content="One‑page guide to run the Ping & Latency Dashboard with Docker, configure endpoints, view metrics in Grafana/Prometheus, and set up alerts via Alertmanager." />
+  <style>
+    :root{
+      --bg:#0b1220; --panel:#101a2b; --text:#e6eefc; --muted:#a7b3c8; --accent:#7cc4ff; --green:#7dffa1; --yellow:#ffe28a; --red:#ff9aa2; --border:#22304a;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, Noto Sans, "Apple Color Emoji","Segoe UI Emoji"; background:var(--bg); color:var(--text); line-height:1.6}
+    header{padding:28px 20px 12px; text-align:center}
+    h1{margin:0 0 10px; font-size: clamp(24px, 3vw, 36px)}
+    .sub{color:var(--muted)}
+    .container{max-width: 980px; margin:0 auto; padding: 0 20px 80px}
+    .panel{background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:20px; margin:18px 0}
+    h2{margin:6px 0 12px; font-size: clamp(18px, 2.4vw, 26px)}
+    h3{margin:12px 0 8px; font-size: clamp(16px, 2vw, 20px)}
+    a{color:var(--accent); text-decoration:none}
+    a:hover{text-decoration:underline}
+    ul{margin:8px 0 12px 20px}
+    code.inline{background:#0a1426; border:1px solid var(--border); padding:1px 6px; border-radius:8px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+    pre{position:relative; background:#0a1426; border:1px solid var(--border); border-radius:14px; overflow:auto; padding:14px;}
+    pre code{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13.5px}
+    .copy{position:absolute; top:8px; right:8px; background:transparent; color:var(--accent); border:1px solid var(--border); border-radius:10px; padding:6px 10px; cursor:pointer}
+    .copy:hover{background:#0d1a31}
+    .callout{border-left:4px solid var(--accent); padding:12px 14px; background:#0a1426; border-radius:8px;}
+    .grid{display:grid; grid-template-columns: repeat( auto-fit, minmax(240px, 1fr) ); gap:12px}
+    .badge{display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid var(--border); background:#0c1730; color:var(--muted); font-size:12px}
+    .toc a{display:block; padding:8px 10px; border:1px solid var(--border); background:#0c1730; border-radius:10px; margin:6px 0}
+    footer{color:var(--muted); text-align:center; margin-top:30px}
+    .diagram{background:#0a1426; border:1px dashed var(--border); padding:16px; border-radius:12px;}
+    .diagram .box{padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:#0f1b33; display:inline-block; margin:6px}
+    .diagram .arrow{display:inline-block; margin:0 8px; color:var(--muted)}
+    .kbd{border:1px solid var(--border); background:#0f1b33; padding:2px 6px; border-radius:6px}
+    .ok{color:var(--green)} .warn{color:var(--yellow)} .err{color:var(--red)}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Ping & Latency Dashboard — Step‑by‑Step</h1>
+    <p class="sub">Probe HTTP/TCP endpoints, collect metrics in Prometheus, alert with Alertmanager, and visualize in Grafana — all in one day.</p>
+  </header>
+
+  <div class="container">
+    <div class="panel toc">
+      <strong>Jump to:</strong>
+      <div class="grid">
+        <a href="#prereqs">1) Prerequisites</a>
+        <a href="#clone">2) Get the code</a>
+        <a href="#run">3) Run the stack</a>
+        <a href="#configure">4) Configure endpoints</a>
+        <a href="#verify">5) Verify metrics & dashboards</a>
+        <a href="#alerts">6) Trigger & see alerts</a>
+        <a href="#notify">7) Real notifications (Slack)</a>
+        <a href="#host-services">8) Monitor your own local services</a>
+        <a href="#troubleshoot">9) Troubleshooting</a>
+        <a href="#stop">10) Stop / restart</a>
+        <a href="#how-it-works">How it works</a>
+      </div>
+    </div>
+
+    <section id="prereqs" class="panel">
+      <h2>1) Prerequisites</h2>
+      <ul>
+        <li><span class="badge">Required</span> <strong>Docker Desktop</strong> running (
+          <code class="inline">docker --version</code>, <code class="inline">docker compose version</code>)</li>
+        <li><span class="badge">Optional</span> Git (
+          <code class="inline">git --version</code>)</li>
+      </ul>
+      <div class="callout">Windows users: run Docker with <strong>WSL2</strong>. If you see Hyper‑V/WSL prompts, enable WSL in “Turn Windows features on or off” and reboot.</div>
+    </section>
+
+    <section id="clone" class="panel">
+      <h2>2) Get the code</h2>
+      <p>Download or clone the repository that contains this guide and the <code class="inline">docker-compose.yml</code>.</p>
+      <pre><button class="copy" data-copy>Copy</button><code>git clone https://github.com/shri-124/ping-latency-dashboard.git
+cd ping-latency-dashboard</code></pre>
+      <p>If you don’t use git, just create the folder structure and copy the files from the project (see README).</p>
+    </section>
+
+    <section id="run" class="panel">
+      <h2>3) Run the stack</h2>
+      <p>From the project root (same folder as <code class="inline">docker-compose.yml</code>):</p>
+      <pre><button class="copy" data-copy>Copy</button><code>docker compose up -d --build</code></pre>
+      <div class="grid">
+        <div class="callout">
+          <h3>Open the UIs</h3>
+          <ul>
+            <li>Pinger metrics: <a href="http://localhost:8000/metrics" target="_blank" rel="noopener">http://localhost:8000/metrics</a></li>
+            <li>Prometheus: <a href="http://localhost:9090" target="_blank" rel="noopener">http://localhost:9090</a></li>
+            <li>Alertmanager: <a href="http://localhost:9093" target="_blank" rel="noopener">http://localhost:9093</a></li>
+            <li>Grafana: <a href="http://localhost:3000" target="_blank" rel="noopener">http://localhost:3000</a></li>
+          </ul>
+        </div>
+        <div class="callout">
+          <h3>Check containers</h3>
+          <pre><button class="copy" data-copy>Copy</button><code>docker compose ps</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="configure" class="panel">
+      <h2>4) Configure endpoints</h2>
+      <p>Edit <code class="inline">config/targets.yml</code>. Supports <strong>HTTP/HTTPS</strong> (full request latency) and <strong>TCP</strong> (connect latency):</p>
+      <pre><button class="copy" data-copy>Copy</button><code>interval_seconds: 15
+request_timeout_seconds: 5
+
+targets:
+  - name: google
+    url: https://www.google.com
+    threshold_seconds: 0.35
+  - name: cloudflare-dns-tcp
+    url: tcp://1.1.1.1:53
+    threshold_seconds: 0.05
+  - name: github
+    url: https://github.com
+    threshold_seconds: 0.40</code></pre>
+      <p>
+        The pinger auto‑reloads this file every cycle. To apply immediately:
+      </p>
+      <pre><button class="copy" data-copy>Copy</button><code>docker compose restart pinger</code></pre>
+      <div class="callout">
+        <strong>Tip:</strong> This app measures HTTP/TCP latency (no raw ICMP <em>ping</em>), which works without extra privileges and matches SRE‑style checks.
+      </div>
+    </section>
+
+    <section id="verify" class="panel">
+      <h2>5) Verify metrics & dashboards</h2>
+      <h3>Quick via metrics endpoint</h3>
+      <pre><button class="copy" data-copy>Copy</button><code>curl -s http://localhost:8000/metrics | grep -E '^ping_(latency_seconds|up){'</code></pre>
+      <p>Look for labels like <code class="inline">target="https://www.google.com"</code> and <code class="inline">name="google"</code>.</p>
+      <h3>Prometheus queries</h3>
+      <ul>
+        <li>List targets: <code class="inline">label_values(ping_latency_seconds, target)</code></li>
+        <li>Up/Down: <code class="inline">sum by (name, target) (ping_up)</code></li>
+        <li>Latency series: <code class="inline">ping_latency_seconds</code></li>
+      </ul>
+      <h3>Grafana dashboard</h3>
+      <p>Open Grafana → folder <strong>Ping</strong> → dashboard <strong>Ping &amp; Latency</strong>.</p>
+    </section>
+
+    <section id="alerts" class="panel">
+      <h2>6) Trigger & see alerts</h2>
+      <p>Prometheus alerts are defined in <code class="inline">prometheus/alerts.yml</code>:</p>
+      <ul>
+        <li><strong>HighLatency</strong>: fires when <code class="inline">ping_latency_seconds &gt; ping_latency_threshold_seconds</code> for 1m</li>
+        <li><strong>TargetDown</strong>: fires when <code class="inline">ping_up == 0</code> for 2m</li>
+      </ul>
+      <h3>Fastest way to test</h3>
+      <ol>
+        <li>Set one target <code class="inline">threshold_seconds: 0.001</code> and save.</li>
+        <li>Wait 15–30s (or restart pinger).</li>
+        <li>Open Alertmanager: <a href="http://localhost:9093" target="_blank" rel="noopener">/</a> → you should see <em>HighLatency</em>.</li>
+        <li>Tail webhook payloads from pinger:</li>
+      </ol>
+      <pre><button class="copy" data-copy>Copy</button><code>docker logs -f pinger</code></pre>
+    </section>
+
+    <section id="notify" class="panel">
+      <h2>7) Real notifications (Slack)</h2>
+      <p>Edit <code class="inline">alertmanager/alertmanager.yml</code> to add Slack (or email). Example Slack config:</p>
+      <pre><button class="copy" data-copy>Copy</button><code>route:
+  receiver: slack
+  group_by: ["alertname","name","target"]
+  group_wait: 10s
+  group_interval: 1m
+  repeat_interval: 2h
+
+receivers:
+  - name: slack
+    slack_configs:
+      - api_url: https://hooks.slack.com/services/YOUR/WEBHOOK/URL
+        channel: "#alerts"
+        send_resolved: true</code></pre>
+      <p>Apply the change:</p>
+      <pre><button class="copy" data-copy>Copy</button><code>docker compose restart alertmanager</code></pre>
+      <div class="callout">In this starter, a local webhook receiver posts to <code class="inline">http://pinger:8000/alert</code> so you can see alert payloads end‑to‑end. Swap the <code class="inline">route.receiver</code> to <code class="inline">slack</code> to notify Slack.</div>
+    </section>
+
+    <section id="host-services" class="panel">
+      <h2>8) Monitor your own local services</h2>
+      <p>Add your app or DB as a target in <code class="inline">config/targets.yml</code>:</p>
+      <pre><button class="copy" data-copy>Copy</button><code>targets:
+  - name: my-api
+    url: http://host.docker.internal:8080
+    threshold_seconds: 0.25
+  - name: postgres
+    url: tcp://host.docker.internal:5432
+    threshold_seconds: 0.05</code></pre>
+      <div class="callout">
+        <strong>Linux note:</strong> Add this under <code class="inline">pinger:</code> in <code class="inline">docker-compose.yml</code> to map <code class="inline">host.docker.internal</code>:
+        <pre><button class="copy" data-copy>Copy</button><code>extra_hosts:
+  - "host.docker.internal:host-gateway"</code></pre>
+      </div>
+    </section>
+
+    <section id="troubleshoot" class="panel">
+      <h2>9) Troubleshooting</h2>
+      <h3>No data in Prometheus</h3>
+      <ul>
+        <li>Open <a href="http://localhost:8000/metrics" target="_blank" rel="noopener">/metrics</a> (should show text metrics)</li>
+        <li>Prometheus → <em>Status → Targets</em> → <code class="inline">pinger:8000</code> must be <span class="ok">UP</span></li>
+        <li>Check logs: <code class="inline">docker logs pinger</code></li>
+      </ul>
+      <h3>Alerts never fire</h3>
+      <ul>
+        <li>Lower the threshold to below observed latency</li>
+        <li>Prometheus → <em>Status → Rules</em> shows <em>HighLatency</em> loaded</li>
+        <li>No silences in Alertmanager</li>
+      </ul>
+      <h3>Port already in use</h3>
+      <p>Change the left side of the port in <code class="inline">docker-compose.yml</code> (e.g., <code class="inline">3001:3000</code>) and restart.</p>
+    </section>
+
+    <section id="stop" class="panel">
+      <h2>10) Stop / start / reset</h2>
+      <div class="grid">
+        <div>
+          <h3>Pause (keep containers)</h3>
+          <pre><button class="copy" data-copy>Copy</button><code>docker compose stop
+# later
+docker compose start</code></pre>
+        </div>
+        <div>
+          <h3>Shutdown (remove containers)</h3>
+          <pre><button class="copy" data-copy>Copy</button><code>docker compose down
+# start again
+docker compose up -d</code></pre>
+        </div>
+        <div>
+          <h3>Clean slate (also volumes/images)</h3>
+          <pre><button class="copy" data-copy>Copy</button><code>docker compose down --volumes --rmi local --remove-orphans</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="how-it-works" class="panel">
+      <h2>How it works</h2>
+      <div class="diagram">
+        <span class="box">Pinger<br><small>probes endpoints; exposes /metrics</small></span>
+        <span class="arrow">→</span>
+        <span class="box">Prometheus<br><small>scrapes & stores; evaluates alerts</small></span>
+        <span class="arrow">→</span>
+        <span class="box">Alertmanager<br><small>routes notifications</small></span>
+        <span class="arrow">↘</span>
+        <span class="box">Slack/Email/Webhook</span>
+        <br/>
+        <span class="arrow">↘</span>
+        <span class="box">Grafana<br><small>dashboards via Prometheus</small></span>
+      </div>
+    </section>
+
+    <footer>
+      <p>Built for quick SRE demos. Questions or issues? Check pinger logs and Prometheus targets first.</p>
+    </footer>
+  </div>
+
+  <script>
+    // Copy-to-clipboard buttons
+    document.querySelectorAll('[data-copy]').forEach(btn=>{
+      btn.addEventListener('click', e=>{
+        const pre = e.target.closest('pre');
+        const code = pre.querySelector('code');
+        const text = code.innerText.replace(/\n$/,'');
+        navigator.clipboard.writeText(text).then(()=>{
+          const old = btn.textContent; btn.textContent='Copied!';
+          setTimeout(()=>btn.textContent=old, 1200);
+        });
+      });
+    });
+  </script>
+</body>
+</html>

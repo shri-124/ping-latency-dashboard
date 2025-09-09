@@ -117,7 +117,7 @@ async def run_probe(t: Dict, timeout: float):
             UP.labels(name, scheme, target_label).set(0)
     else:
         raise ValueError("Unsupported URL scheme. Use http(s):// or tcp://")
-    
+
 
 async def scheduler():
     await asyncio.sleep(0.2)
