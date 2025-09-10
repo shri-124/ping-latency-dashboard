@@ -1,7 +1,7 @@
 # Ping & Latency Dashboard
 
 
-A one‑day build: probe multiple targets (HTTP and TCP), export Prometheus metrics, alert when latency > threshold, and visualize in Grafana.
+Probe multiple targets (HTTP and TCP), export Prometheus metrics, alert when latency > threshold, and visualize in Grafana.
 
 
 ## Quick start
